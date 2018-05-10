@@ -1,0 +1,6 @@
+- hosts: testsystem
+  vars_files:
+    - ../vars/testsystem.yaml
+  remote_user: root
+  roles:
+    - { role: ../roles/role-firewall }
