@@ -1,0 +1,45 @@
+---
+# set to enable masquerading
+external_interface: 
+# must be set
+internal_interface: "eth1"
+
+firewall_state: started
+firewall_enabled_at_boot: true
+firewall_allowed_tcp_ports:
+- "22"
+- "25"
+- "80"
+- "443"
+firewall_allowed_udp_ports: []
+firewall_redirected_tcp_ports: []
+firewall_redirected_udp_ports: []
+
+firewall_forwarded_tcp_ports: []
+  #- { src: "22", dest: "2222" }
+
+firewall_forwarded_udp_ports: []
+  #- { src: "22", dest: "2222" }
+
+firewall_forwarded_dest_ip_tcp_ports: []
+#  - { dest_ip: "10.0.0.1", dest_port: "21" }
+#  - { dest_ip: "10.0.0.1", dest_port: "21" }
+
+firewall_forwarded_dest_ip_udp_ports: []
+#  - { dest_ip: "10.0.0.1", dest_port: "21" }
+#  - { dest_ip: "10.0.0.2", dest_port: "25" }
+
+firewall_allow_from_source_ip: []
+#  - { source_ip: "8.8.8.8", dest_ip: "10.0.0.1", dest_port: "21" }
+#  - { source_ip: "8.8.8.8", dest_ip: "10.0.0.1", dest_port: "22" }
+#  - { source_ip: "8.8.8.8", dest_ip: "10.0.0.1", dest_port: "23" }
+
+firewall_additional_rules: []
+firewall_ip6_additional_rules: []
+firewall_log_dropped_packets: true
+
+
+# Set to true to ensure other firewall management software is disabled.
+firewall_disable_firewalld: false
+firewall_disable_ufw: false
+

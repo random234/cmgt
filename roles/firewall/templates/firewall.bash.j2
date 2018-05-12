@@ -1,0 +1,139 @@
+#! /bin/sh
+
+# interfaces
+# external interface
+#EXT=eth0
+#internal interfaces
+#INT=virbr10
+#PUBLIC_INT=eth3
+
+#loopback interface
+#LOOP=lo
+
+#
+# Setup firewall rules
+#
+setup()
+{
+  if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]
+  then
+  for filter in /proc/sys/net/ipv4/conf/*/rp_filter
+  do
+  echo 1 > $filter
+  done
+  fi
+
+  echo -n "FW:Clear tables ... "
+  iptables -F
+  iptables -t nat -F
+  iptables -t mangle -F
+  iptables -X
+  echo "done"
+
+  echo -n "FW:Input rules ... "
+  # First rule since it is in all likelihood the most common rule to be hit
+  iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+  # Accept traffic from loopback interface (localhost)
+  iptables -A INPUT -i lo -j ACCEPT
+  iptables -A INPUT -m state --state NEW -i {{ internal_interface }}  -j ACCEPT
+  # todo: disable access to firewall from public internal wlan
+  # iptables -A INPUT -m state --state NEW -i $PUBLIC_INT  -j ACCEPT
+
+  # Allow icmp requests
+  iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+  iptables -A INPUT -j LOG --log-prefix "IN-DROP: " 
+  iptables -A INPUT -j DROP
+  echo "done"
+
+  # allow tcp ports
+  {% for port in firewall_allowed_tcp_ports %}
+    iptables -A INPUT -m state --state NEW -p tcp --dport {{ port }} -j ACCEPT
+  {% endfor %}
+
+  # allow udp ports
+  {% for port in firewall_allowed_udp_ports %}
+    iptables -A INPUT -m state --state NEW -p udp --dport {{ port }} -j ACCEPT
+  {% endfor %}
+
+  # forward tcp src port to dest port
+  {% for forwarded_port in firewall_forwarded_tcp_ports %}
+    iptables -t nat -I PREROUTING -p tcp --dport {{ forwarded_port.src_port }} -j REDIRECT --to-port {{ forwarded_port.dest_port }}
+    iptables -t nat -I OUTPUT -p tcp -o lo --dport {{ forwarded_port.src_port }} -j REDIRECT --to-port {{ forwarded_port.dest_port }}
+  {% endfor %}
+
+  # forward udp src port to dest port
+  {% for item in firewall_forwarded_udp_ports %}
+    iptables -t nat -I PREROUTING -p udp --dport {{ forwarded_port.src_port }} -j REDIRECT --to-port {{ forwarded_port.dest_port }}
+    iptables -t nat -I OUTPUT -p udp -o lo --dport {{ forwarded_port.src_port }} -j REDIRECT --to-port {{ forwarded_port.dest_port }}
+  {% endfor %}
+
+  {% if external_interface != None %}
+    # Masquerading rule in case we want to masquerade our local ips
+    echo -n "FW:Masquerading rules ... "
+    iptables -t nat -A POSTROUTING -o {{ external_interface }} -j MASQUERADE
+    iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
+    echo "done"
+
+    echo -n "FW:Forward rules ... "
+    iptables -A FORWARD -i {{ external_interface }} -m state --state ESTABLISHED,RELATED -j ACCEPT
+    iptables -A FORWARD -i {{ internal_interface }} -m state --state ESTABLISHED,RELATED -j ACCEPT
+    iptables -A FORWARD -i {{ internal_interface }} -j ACCEPT
+    echo "done"
+    
+    echo -n "FW:Port forwarding rules ... "
+  
+    # forward external tcp port to port of another machine
+    {% for item in firewall_forwarded_dest_ip_tcp_ports %}
+      iptables -t nat -A PREROUTING -i {{ external_interface }} -p tcp --dport {{ dest_port }} -j DNAT --to {{ item.dest_ip }}:{{ dest_port }}
+      iptables -A FORWARD -i {{ external_interface }} -p tcp --destination {{ item.dest_ip }} --dport {{ dest_port }} -m state --state NEW -j ACCEPT
+    {% endfor %}
+            
+    # forward external udp port to port of another machine Exp: VPN
+    {% for item in firewall_forwarded_dest_ip_udp_ports %}
+      iptables -t nat -A PREROUTING -i $EXT -p udp --dport {{ item.dest_port }} -j DNAT --to {{ item.dest_ip }}:{{ item.dest_port }}
+      iptables -A FORWARD -i $EXT -p udp --destination {{ item.dest_ip }} --dport {{ item.dest_port }} -m state --state NEW -j ACCEPT
+    {% endfor %}
+
+
+    # forward tcp port from source IP to dest IP
+    {% for item in firewall_allow_from_source_ip %}
+      iptables -t nat -A PREROUTING -i $EXT -p tcp --dport {{ item.dest_port }} -j DNAT --to {{ item.dest_ip }}:{{ dest_port }}
+      iptables -A FORWARD -i $EXT -p tcp --source {{ item.source_ip }} --destination {{ item.dest_ip }} --dport {{ item.dest_port }} -m state --state NEW -j ACCEPT
+    {% endfor %}
+
+  {% endif %}
+    iptables -A FORWARD -j LOG --log-prefix "FWD-DROP: " 
+    iptables -A FORWARD -j DROP
+    echo "done."
+    echo -n "FW:IP Forwarding ... "
+    echo 1 > /proc/sys/net/ipv4/ip_forward
+    # disable ipv6 forwarding so far ...
+    echo 0 > /proc/sys/net/ipv6/conf/all/forwarding
+    echo "done."
+    return 0
+}
+
+#
+# Teardown firewall
+#
+flush()
+{
+    echo -n "FW: Clear tables ... "
+    iptables -F
+    iptables -t nat -F
+    iptables -t mangle -F
+    iptables -X
+    echo "done"
+    return 0
+}
+
+case "$1" in
+    start|restart)
+	setup
+	;;
+    stop)
+	flush
+	;;
+esac
+
+:

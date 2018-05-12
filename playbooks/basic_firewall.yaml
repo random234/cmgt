@@ -3,4 +3,4 @@
     - ../vars/testsystem.yaml
   remote_user: root
   roles:
-    - { role: ../roles/role-firewall }
+    - { role: ../roles/firewall }
