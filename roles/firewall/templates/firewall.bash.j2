@@ -106,11 +106,11 @@ setup()
     {% endfor %}
     echo "- done ..."
 
-  {% endif %}
     iptables -A FORWARD -j LOG --log-prefix "FWD-DROP: " 
     iptables -A FORWARD -j DROP
     echo "- IP forwarding ..."
     echo 1 > /proc/sys/net/ipv4/ip_forward
+  {% endif %}
     # disable ipv6 forwarding so far ...
     echo 0 > /proc/sys/net/ipv6/conf/all/forwarding
     echo "- done ..."
