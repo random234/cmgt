@@ -1,6 +1,0 @@
-external_interface: eth0
-internal_interface: br0
-allow_ssh: true
-allow_http: true
-allow_https: true
-forwarding_host: false
