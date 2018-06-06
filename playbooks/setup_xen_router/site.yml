@@ -1,0 +1,6 @@
+#!/usr/bin/env ansible-playbook
+- import_playbook: playbooks/setup_firewall.yml
+
+# allow traffic to flow to VMS freely
+# route add -net 176.9.201.160 netmask 255.255.255.248 gateway 176.9.201.161 dev br0
+

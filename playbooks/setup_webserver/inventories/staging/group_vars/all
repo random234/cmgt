@@ -1,0 +1,21 @@
+#external_interface: "eth0"
+internal_interface: "ens3"
+firewall_allowed_tcp_ports:
+- "22"
+#- "25"
+- "80"
+- "443"
+#firewall_forwarded_tcp_ports:
+#- { src_port: "2222", dest_port: "22" }
+
+
+ntp_enabled: true
+ntp_timezone: Etc/UTC
+ntp_manage_config: false
+ntp_servers: 
+  - "server 0.de.pool.ntp.org"
+  - "server 1.de.pool.ntp.org"
+  - "server 2.de.pool.ntp.org"
+ntp_restrict:
+  - "127.0.0.1"
+  - "::1"

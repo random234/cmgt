@@ -1,0 +1,25 @@
+all:
+  hosts:
+    deploy-local.pcarpus.de:
+    build-system.pcarpus.de:
+    test1.pcarpus.de:
+    test2.pcarpus.de:
+  children:
+    firewalled_system:
+      hosts:
+        deploy-local.pcarpus.de:
+        build-system.pcarpus.de:
+        test1.pcarpus.de:
+        test2.pcarpus.de:
+    testsystem:
+      hosts:
+        test1.pcarpus.de:
+        test2.pcarpus.de:
+    build-system:
+      hosts:
+        build-system.pcarpus.de:
+    deploy-system:
+      hosts:
+        deploy-local.pcarpus.de:
+
+
