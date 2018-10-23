@@ -1,9 +1,10 @@
 #external_interface: "eth0"
-internal_interface: "eth0"
+internal_interface: "ens3"
 
 firewall_allowed_tcp_ports:
 - "22"
+- "443"
 #- "25"
-#- "80"
+- "80"
 #firewall_forwarded_tcp_ports:
 #- { src_port: "2222", dest_port: "22" }
